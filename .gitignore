@@ -1,0 +1,73 @@
+# Python Caches and Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+.ipynb_checkpoints/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+bin/
+lib/
+include/
+pip-selfcheck.json
+
+# Node Modules and Web Caches
+node_modules/
+.npm
+.eslintcache
+package-lock.json
+
+# IDE and Project Settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.project
+.classpath
+.settings/
+
+# OS and System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Build and Packaging Artifacts
+dist/
+build/
+*.egg-info/
+*.gemini/
+
+# Project Logs and Cache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local Uploads and Temp Files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Large Datasets and Non-Project Materials
+backend/ml/data/raw_reviews.csv
+backend/ml/data/balanced_reviews_600k.csv
+*.docx
+*.doc
+*.pptx
+*.ppt
+*.pdf
+*.png
+*.js
+
+# Keep specific project charts or documentation if required (explicit exceptions)
+!README.md
+!backend/ml/reports/*.png
+!backend/ml/reports/*.csv
+!backend/ml/reports/*.xlsx
