@@ -489,6 +489,13 @@ Paper Submission Preparation
    * Inspect the React/Vite client codebase under `/frontend/` and connect component API calls to the REST backend endpoints.
    * Verify rendering of Single review analysis, Batch CSV uploading drag-and-drop zones, and Dashboard aggregate visuals.
 
+### Stable Release
+* **Current Stable Version**: `v1.6.0-backend-frozen`
+* **Status**: **Frozen** (Production Baseline)
+* **Permanent Git Tag**: `v1.6.0-backend-frozen`
+* **Git Recovery Branch**: `phase7-final`
+* **Purpose**: Serves as a clean, deployment-verified recovery checkpoint for the Python backend before launching Phase 8 frontend E2E integration.
+
 ---
 
 ## 18. Appendices
