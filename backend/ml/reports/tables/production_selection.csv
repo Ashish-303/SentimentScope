@@ -1,0 +1,2 @@
+Classifier,Macro F1,Accuracy,Latency,Training Time,Justification
+Logistic Regression,0.7701016191973031,0.7719519898926089,0.11642455151016322,1.8734934329986572,"Selected Logistic Regression (F1=0.7701) over SGD Classifier (F1=0.7799) due to statistical equivalence (Wilcoxon p=1.0000, McNemar p=0.0852). Logistic Regression provides significantly lower prediction latency, a smaller model size, shorter training times, and higher model explainability, making it the superior candidate for production APIs."

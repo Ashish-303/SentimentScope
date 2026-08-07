@@ -65,9 +65,14 @@ backend/ml/data/balanced_reviews_600k.csv
 *.pdf
 *.png
 *.js
+# Local Environment files
+.env
+.env.production
+.env.development
 
-# Keep specific project charts or documentation if required (explicit exceptions)
-!README.md
-!backend/ml/reports/*.png
-!backend/ml/reports/*.csv
-!backend/ml/reports/*.xlsx
+# Log directories
+logs/
+backend/ml/reports/logs/
+
+# ML Model Archives
+backend/ml/models/archive/

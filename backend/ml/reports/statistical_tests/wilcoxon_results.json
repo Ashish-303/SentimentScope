@@ -1,0 +1,122 @@
+[
+    {
+        "model_A": "Multinomial Naive Bayes",
+        "model_B": "Logistic Regression",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Multinomial Naive Bayes",
+        "model_B": "Linear SVC",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Multinomial Naive Bayes",
+        "model_B": "SGD Classifier (Hinge)",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Multinomial Naive Bayes",
+        "model_B": "SGD Classifier (Log Loss)",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Multinomial Naive Bayes",
+        "model_B": "Random Forest",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Logistic Regression",
+        "model_B": "Linear SVC",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Logistic Regression",
+        "model_B": "SGD Classifier (Hinge)",
+        "statistic": 1.0,
+        "p_value": 0.125,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Logistic Regression",
+        "model_B": "SGD Classifier (Log Loss)",
+        "statistic": 1.0,
+        "p_value": 0.125,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Logistic Regression",
+        "model_B": "Random Forest",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Linear SVC",
+        "model_B": "SGD Classifier (Hinge)",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Linear SVC",
+        "model_B": "SGD Classifier (Log Loss)",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "Linear SVC",
+        "model_B": "Random Forest",
+        "statistic": 1.0,
+        "p_value": 0.125,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "SGD Classifier (Hinge)",
+        "model_B": "SGD Classifier (Log Loss)",
+        "statistic": 0.0,
+        "p_value": 1.0,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "SGD Classifier (Hinge)",
+        "model_B": "Random Forest",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    },
+    {
+        "model_A": "SGD Classifier (Log Loss)",
+        "model_B": "Random Forest",
+        "statistic": 0.0,
+        "p_value": 0.0625,
+        "significant": false,
+        "decision": "Fail to Reject Null (Insignificant)"
+    }
+]

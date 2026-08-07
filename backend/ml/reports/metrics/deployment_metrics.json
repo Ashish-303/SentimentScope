@@ -1,0 +1,39 @@
+{
+    "metadata": {
+        "timestamp": "Fri Aug  7 16:22:30 2026",
+        "model_type": "Logistic Regression",
+        "pipeline": "Unified (sentiment_model.pkl)",
+        "version": "1.6.0"
+    },
+    "loading_time_s": 0.6207363605499268,
+    "memory_usage": {
+        "before_load_mb": 170.171875,
+        "after_load_mb": 177.640625,
+        "overhead_mb": 7.46875
+    },
+    "prediction_latency": {
+        "single_review_avg_ms": 30.836983919143677,
+        "batch_inference": {
+            "batch_size_10": {
+                "avg_batch_latency_ms": 6.803464889526367,
+                "per_review_latency_ms": 0.6803464889526367
+            },
+            "batch_size_50": {
+                "avg_batch_latency_ms": 10.76192855834961,
+                "per_review_latency_ms": 0.2152385711669922
+            },
+            "batch_size_100": {
+                "avg_batch_latency_ms": 34.566640853881836,
+                "per_review_latency_ms": 0.34566640853881836
+            },
+            "batch_size_500": {
+                "avg_batch_latency_ms": 154.60227727890015,
+                "per_review_latency_ms": 0.30920455455780027
+            }
+        }
+    },
+    "csv_throughput": {
+        "total_processing_time_s": 0.03511524200439453,
+        "rows_per_second": 2847.7662203633795
+    }
+}

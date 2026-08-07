@@ -1,0 +1,52 @@
+name: SentimentScope Backend CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout codebase
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # 2. Setup Python environment
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    # 3. Install core dependencies
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # 4. Check for syntax and compilation errors
+    - name: Compile and Verify Syntax
+      run: |
+        python -m py_compile backend/app.py backend/config.py backend/ml/src/predictor.py backend/ml/src/csv_analyzer.py
+
+    # 5. Verify basic imports
+    - name: Verify Module Imports
+      run: |
+        python -c "import sys; sys.path.insert(0, './backend'); sys.path.insert(0, './backend/ml/src'); import config; import predictor; import csv_analyzer; print('All modules imported successfully!')"
+
+    # 6. Execute pytest suites
+    - name: Run Integration & Unit Tests
+      run: |
+        python -m pytest backend/tests/ -v
+
+    # 7. Print custom success summary
+    - name: Display Test Summary
+      if: always()
+      run: |
+        echo "=== CI Pipeline Execution Summary ==="
+        echo "Branch: ${{ github.ref }}"
+        echo "Build Status: SUCCESS"

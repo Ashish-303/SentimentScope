@@ -1,0 +1,35 @@
+{
+    "timestamp": "2026-07-28T05:35:08Z",
+    "dataset_statistics": {
+        "total_raw_records": 15829,
+        "total_evaluated_records": 1000,
+        "number_of_classes": 3,
+        "class_labels": [
+            "Negative",
+            "Neutral",
+            "Positive"
+        ],
+        "class_distribution": {
+            "Negative": 0.381,
+            "Neutral": 0.338,
+            "Positive": 0.281
+        }
+    },
+    "pipeline_version": "1.3",
+    "random_seed": 42,
+    "feature_engineering_configurations": {
+        "tfidf_max_features": 15000,
+        "tfidf_ngram_range": [
+            1,
+            2
+        ],
+        "tfidf_min_df": 2,
+        "tfidf_max_df": 0.9,
+        "tfidf_sublinear_tf": true,
+        "tfidf_use_idf": true,
+        "tfidf_smooth_idf": true,
+        "tfidf_norm": "l2",
+        "chi2_enabled": true,
+        "chi2_features_k": 10000
+    }
+}

@@ -1,161 +1,98 @@
-from flask import Blueprint
-from flask import request
-from flask import jsonify
-from werkzeug.utils import secure_filename
+"""Flask API Blueprint for Batch CSV Sentiment Uploads.
+
+Defines the endpoint to handle multipart CSV files, validates them, saves them,
+runs prediction analytics, and compiles the metrics dashboard payload.
+"""
 
 import os
-import sys
+import logging
+from flask import Blueprint, request, jsonify
+from werkzeug.utils import secure_filename
 
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
-
-ML_SRC = os.path.abspath(
-    os.path.join(
-        BASE_DIR,
-        "..",
-        "ml",
-        "src"
-    )
-)
-
-if ML_SRC not in sys.path:
-    sys.path.append(ML_SRC)
-
+import config
 from csv_analyzer import analyze_csv
-from dashboard_generator import (
-    generate_dashboard
-)
+from dashboard_generator import generate_dashboard
 
-upload_bp = Blueprint(
-    "upload",
-    __name__
-)
+# Initialize Logger
+logger = logging.getLogger("SentimentScope.Upload")
 
-UPLOAD_FOLDER = os.path.abspath(
-    os.path.join(
-        BASE_DIR,
-        "..",
-        "uploads"
-    )
-)
-
-os.makedirs(
-    UPLOAD_FOLDER,
-    exist_ok=True
-)
+# Initialize Blueprint
+upload_bp = Blueprint("upload", __name__)
 
 
-@upload_bp.route(
-    "/upload",
-    methods=["POST"]
-)
+@upload_bp.route("/upload", methods=["POST"])
 def upload():
-
+    """Validates uploaded review CSV files, performs batch analysis, and returns aggregates."""
     try:
-
         # ==========================
         # FILE VALIDATION
         # ==========================
-
         if "file" not in request.files:
-
+            logger.warning("Upload attempt failed: File field missing in multipart request.")
             return jsonify({
-
                 "status": "error",
-
-                "message":
-                "No file uploaded"
-
+                "message": "No file uploaded"
             }), 400
 
         file = request.files["file"]
 
         if file.filename == "":
-
+            logger.warning("Upload attempt failed: Filename is empty.")
             return jsonify({
-
                 "status": "error",
+                "message": "No file selected"
+            }), 400
 
-                "message":
-                "No file selected"
-
+        # Validate file extensions using central configuration settings
+        if not file.filename.lower().endswith(".csv"):
+            logger.warning(f"Upload attempt failed: Invalid file type {file.filename}.")
+            return jsonify({
+                "status": "error",
+                "message": "Only CSV files are allowed"
             }), 400
 
         # ==========================
         # SAVE FILE
         # ==========================
-
         filename = secure_filename(file.filename)
-        filepath = os.path.join(
-            UPLOAD_FOLDER,
-            filename
-        )
+        filepath = os.path.join(config.UPLOAD_FOLDER, filename)
 
-        file.save(
-            filepath
-        )
-
-        print(
-            f"File Saved: {filepath}"
-        )
+        logger.info(f"Saving uploaded CSV file to: {filepath}")
+        file.save(filepath)
 
         # ==========================
         # ANALYZE CSV
         # ==========================
-
-        result_df = analyze_csv(
-            filepath
-        )
+        logger.info(f"Initiating batch CSV analysis for file: {filename}")
+        result_df = analyze_csv(filepath)
 
         # ==========================
         # GENERATE DASHBOARD
         # ==========================
-
-        dashboard = (
-            generate_dashboard(
-                result_df
-            )
-        )
+        logger.info("Compiling analytic summary dashboard metrics.")
+        dashboard = generate_dashboard(result_df)
 
         # ==========================
         # RESPONSE
         # ==========================
-
         return jsonify({
-
             "status": "success",
-
-            "filename":
-            filename,
-
-            "rows_processed":
-            len(result_df),
-
-            "columns":
-            result_df.columns.tolist(),
-
-            "dashboard":
-            dashboard
-
+            "filename": filename,
+            "rows_processed": len(result_df),
+            "columns": result_df.columns.tolist(),
+            "dashboard": dashboard
         })
 
     except ValueError as e:
-
+        logger.error(f"Validation error in CSV schema: {e}")
         return jsonify({
-
             "status": "error",
-
             "message": str(e)
-
         }), 400
 
     except Exception as e:
-
+        logger.exception("Failed to complete batch upload analysis.")
         return jsonify({
-
             "status": "error",
-
             "message": str(e)
-
         }), 500

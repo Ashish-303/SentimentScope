@@ -1,17 +1,41 @@
+"""Batch CSV Analyzer for SentimentScope.
+
+Loads review datasets, validates column schemas, runs prediction inference on each
+review row, extracts aspects, and builds standardized summary metrics.
+"""
+
 import os
+import logging
 import pandas as pd
 
-from predictor import analyze_review
+# Ensure the backend directory is in the python path
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
+from predictor import predictor
+from complaint_detector import detect_issue
+from positive_detector import detect_positive_features
 from validators import validate_columns
 
+# Initialize Logger
+logger = logging.getLogger("SentimentScope.CSVAnalyzer")
 
-def analyze_csv(csv_path):
 
-    print(f"\nLoading CSV: {csv_path}")
+def analyze_csv(csv_path: str) -> pd.DataFrame:
+    """Performs batch sentiment classification and aspect mining on a CSV dataset.
+
+    Args:
+        csv_path: Absolute filepath to the input reviews CSV.
+
+    Returns:
+        A pandas DataFrame enriched with predicted sentiments, complaints, and highlights.
+    """
+    logger.info(f"Initiating analysis on dataset: {csv_path}")
 
     df = pd.read_csv(csv_path, encoding='utf-8')
-
-    print(f"Original Shape: {df.shape}")
+    logger.info(f"Original shape: {df.shape}")
 
     (
         product_col,
@@ -20,109 +44,67 @@ def analyze_csv(csv_path):
         rating_col
     ) = validate_columns(df)
 
-    print(
-        f"Product Column Found: {product_col}"
-    )
-
-    print(
-        f"Text Column Found: {text_col}"
-    )
-
-    print(
-        f"Category Column Found: {category_col}"
-    )
-
-    print(
-        f"Rating Column Found: {rating_col}"
-    )
+    logger.info(f"Product Column Selected: {product_col}")
+    logger.info(f"Text Column Selected: {text_col}")
+    logger.info(f"Category Column Selected: {category_col}")
+    logger.info(f"Rating Column Selected: {rating_col}")
 
     # Remove rows with missing review text
+    df = df.dropna(subset=[text_col])
+    logger.info(f"Shape after removing null reviews: {df.shape}")
 
-    df = df.dropna(
-        subset=[text_col]
-    )
+    # Batch predict sentiments
+    reviews_list = [str(r) for r in df[text_col]]
+    logger.info(f"Running batch sentiment prediction for {len(reviews_list)} reviews...")
 
-    print(
-        f"After Removing Null Reviews: {df.shape}"
-    )
+    try:
+        sentiments = predictor.predict_batch(reviews_list)
+    except Exception as e:
+        logger.exception("Failed to run batch predictions.")
+        sentiments = ["Neutral"] * len(reviews_list)
 
-    sentiments = []
+    # Perform aspect mining row-by-row based on predicted sentiment
     issues = []
     positive_features = []
+    total_reviews = len(reviews_list)
 
-    total_reviews = len(df)
-
-    for index, review in enumerate(
-        df[text_col],
-        start=1
-    ):
-
+    logger.info("Executing aspect mining on predicted sentiments...")
+    for index, (review, sentiment) in enumerate(zip(reviews_list, sentiments), start=1):
         try:
+            issues_list = []
+            positive_features_list = []
 
-            review = str(review)
+            if str(sentiment).lower() == "negative":
+                issues_list = detect_issue(review)
+                if len(issues_list) == 0:
+                    issues_list = ["Other"]
+            elif str(sentiment).lower() == "positive":
+                positive_features_list = detect_positive_features(review)
+                if len(positive_features_list) == 0:
+                    positive_features_list = ["General Satisfaction"]
 
-            result = analyze_review(
-                review
-            )
+            issues.append(", ".join(issues_list))
+            positive_features.append(", ".join(positive_features_list))
 
-            sentiments.append(
-                result["sentiment"]
-            )
-
-            issues.append(
-                ", ".join(
-                    result["issue"]
-                )
-            )
-
-            positive_features.append(
-                ", ".join(
-                    result["positive_features"]
-                )
-            )
-
-            if index % 100 == 0:
-
-                print(
-                    f"Processed {index}/{total_reviews}"
-                )
+            if index % 500 == 0:
+                logger.info(f"Progress: Analyzed aspects for {index}/{total_reviews}")
 
         except Exception as e:
-
-            print(
-                f"Error at row {index}: {e}"
-            )
-
-            sentiments.append(
-                "Unknown"
-            )
-
-            issues.append(
-                "Other"
-            )
-
-            positive_features.append(
-                "General Satisfaction"
-            )
+            logger.error(f"Error processing row {index}: {e}")
+            issues.append("Other")
+            positive_features.append("General Satisfaction")
 
     # ==================================
     # STANDARDIZED COLUMNS
     # ==================================
-
-    df["Product_Name"] = (
-        df[product_col]
-    )
-
-    df["Review_Text"] = (
-        df[text_col]
-    )
+    df["Product_Name"] = df[product_col]
+    df["Review_Text"] = df[text_col]
 
     if category_col:
         df["Category"] = df[category_col]
     else:
-        # Dynamically extract category from product names
-        print("Category column missing. Extracting dynamically from product names...")
-        def extract_category(product_name):
+        logger.warning("Category column missing. Performing rule-based dynamic mapping from product names...")
+        def extract_category(product_name: str) -> str:
             name = str(product_name).lower()
             if any(x in name for x in ["cooler", "fan", "ac", "heater", "purifier", "water purifier", "kettle", "oven"]):
                 return "Home & Kitchen"
@@ -148,85 +130,39 @@ def analyze_csv(csv_path):
     # ==================================
     # MODEL OUTPUT
     # ==================================
-
-    df["Predicted_Sentiment"] = (
-        sentiments
-    )
-
-    df["Detected_Issues"] = (
-        issues
-    )
-
-    df["Positive_Features"] = (
-        positive_features
-    )
+    df["Predicted_Sentiment"] = sentiments
+    df["Detected_Issues"] = issues
+    df["Positive_Features"] = positive_features
 
     # ==================================
     # SUMMARY
     # ==================================
-
-    print("\nAnalysis Summary")
-
-    print(
-        df["Predicted_Sentiment"]
-        .value_counts()
-    )
-
-    print("\nPositive Features:")
-
-    print(
-        df["Positive_Features"]
-        .value_counts()
-        .head(10)
-    )
-
-    print(
-        f"\nProducts Found: "
-        f"{df['Product_Name'].nunique()}"
-    )
+    logger.info("Batch CSV analysis processing completed.")
+    logger.info(f"Sentiment distribution summary:\n{df['Predicted_Sentiment'].value_counts()}")
+    logger.info(f"Top Positive Features summary:\n{df['Positive_Features'].value_counts().head(10)}")
+    logger.info(f"Unique products identified: {df['Product_Name'].nunique()}")
 
     return df
 
 
 # ==================================
-# TEST
+# TEST RUNNER
 # ==================================
-
 if __name__ == "__main__":
-
-    BASE_DIR = os.path.dirname(
-        os.path.abspath(__file__)
-    )
+    import config
 
     CSV_PATH = os.path.join(
-        BASE_DIR,
-        "..",
-        "data",
+        config.DATA_DIR,
         "sample_reviews.csv"
     )
 
-    result_df = analyze_csv(
-        CSV_PATH
-    )
+    if os.path.exists(CSV_PATH):
+        result_df = analyze_csv(CSV_PATH)
+        print("\n[Test Mode] Analysis Complete.")
+        print(result_df.head())
 
-    print("\nAnalysis Complete")
-
-    print(
-        result_df.head()
-    )
-
-    OUTPUT_PATH = os.path.join(
-        BASE_DIR,
-        "..",
-        "data",
-        "analyzed_reviews.csv"
-    )
-
-    result_df.to_csv(
-        OUTPUT_PATH,
-        index=False
-    )
-
-    print(
-        f"\nSaved Output To:\n{OUTPUT_PATH}"
-    )
+        OUTPUT_PATH = config.ANALYZED_DATA_PATH
+        result_df.to_csv(OUTPUT_PATH, index=False)
+        print(f"\n[Test Mode] Saved Output To:\n{OUTPUT_PATH}")
+    else:
+        print(f"\n[Test Mode] Test source file not found at: {CSV_PATH}")

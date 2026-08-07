@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentimentscope-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      # Avoid mounting host node_modules, pycache or uploads if they conflict
+      - /app/backend/ml/reports/logs
+      - /app/backend/uploads
+    env_file:
+      - .env.example
+    environment:
+      - FLASK_ENV=development
+      - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=5000
+    restart: unless-stopped

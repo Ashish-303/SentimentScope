@@ -1,0 +1,411 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SentimentScope API",
+    "version": "1.6.0",
+    "description": "AI-Powered Product Review Intelligence Platform Backend API Specification. Exposes endpoints for single review classification, aspect mining, batch CSV upload, and business intelligence reporting dashboards."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/analyze": {
+      "post": {
+        "summary": "Analyze Sentiment & Extract Aspects (Single)",
+        "description": "Cleans the incoming review text and runs inference through the unified Scikit-learn Logistic Regression pipeline. Extracts sentiment class (Positive, Negative, Neutral) and applies dynamic keyword-based aspect mining to discover product complaints and positive highlights.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "review"
+                ],
+                "properties": {
+                  "review": {
+                    "type": "string",
+                    "description": "Raw review text to analyze.",
+                    "example": "This washing machine is absolutely wonderful! Very quiet operation."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful extraction.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "review": {
+                          "type": "string",
+                          "example": "This washing machine is absolutely wonderful! Very quiet operation."
+                        },
+                        "sentiment": {
+                          "type": "string",
+                          "example": "Positive"
+                        },
+                        "issue": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
+                        },
+                        "positive_features": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": [
+                            "General Satisfaction",
+                            "Quality"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request validation errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Review text is required."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server inference failures.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Error unpickling sentiment model."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload": {
+      "post": {
+        "summary": "Batch Analyze Reviews (CSV Upload)",
+        "description": "Upload a product reviews dataset CSV file. Automatically identifies appropriate text, product, category, and rating columns, validates schemas, runs vectorized batch prediction on the reviews, and saves the analysis database to disk.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The reviews CSV dataset file."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch processing completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "filename": {
+                      "type": "string",
+                      "example": "balanced_reviews.csv"
+                    },
+                    "rows_processed": {
+                      "type": "integer",
+                      "example": 100
+                    },
+                    "dashboard": {
+                      "type": "object",
+                      "description": "Aggregated business intelligence metrics for the dataset.",
+                      "properties": {
+                        "positive_reviews": {
+                          "type": "integer",
+                          "example": 33
+                        },
+                        "neutral_reviews": {
+                          "type": "integer",
+                          "example": 19
+                        },
+                        "negative_reviews": {
+                          "type": "integer",
+                          "example": 48
+                        },
+                        "category_summary": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer"
+                          },
+                          "example": {
+                            "Home & Kitchen": 51,
+                            "Beauty": 3
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request, malformed file, missing files, or validation failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "No file part in the multipart request."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server processing failures.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Failed to run batch predictions."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Retrieve Dashboard BI Aggregates",
+        "description": "Reads the primary analyzed database from `analyzed_reviews.csv` and returns aggregated KPIs, category segmentations, positive highlights, and complaint aspect metrics.",
+        "responses": {
+          "200": {
+            "description": "Dashboard metrics successfully compiled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "positive_reviews": {
+                          "type": "integer",
+                          "example": 33
+                        },
+                        "neutral_reviews": {
+                          "type": "integer",
+                          "example": 19
+                        },
+                        "negative_reviews": {
+                          "type": "integer",
+                          "example": 48
+                        },
+                        "category_summary": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer"
+                          },
+                          "example": {
+                            "Home & Kitchen": 51,
+                            "Beauty": 3
+                          }
+                        },
+                        "issue_summary": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer"
+                          },
+                          "example": {
+                            "Damaged Product": 5,
+                            "Defective Product": 10
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Analyzed dataset has not been uploaded yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Analyzed dataset has not been uploaded yet."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal database reading errors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Failed to retrieve dashboard aggregates."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Inference Pipeline Diagnostic Health Check",
+        "description": "Returns model lazy load status, classifier type, unified pipeline tag, and deployed system version.",
+        "responses": {
+          "200": {
+            "description": "Service is running and healthy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "model_loaded": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "model": {
+                      "type": "string",
+                      "example": "Logistic Regression"
+                    },
+                    "pipeline": {
+                      "type": "string",
+                      "example": "Unified"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.6.0"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Service is unhealthy or pipeline cannot be unpickled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "unhealthy"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Unified model file not found at path."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

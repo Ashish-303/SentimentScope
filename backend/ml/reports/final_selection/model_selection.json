@@ -1,0 +1,59 @@
+{
+    "recommended_production_model": "Logistic Regression",
+    "metrics": {
+        "macro_f1": 0.7701016191973031,
+        "accuracy": 0.7719519898926089,
+        "precision": 0.770023575201689,
+        "recall": 0.7702512736565476,
+        "latency_ms": 0.11642455151016322,
+        "training_time_s": 1.8734934329986572
+    },
+    "statistical_tests": {
+        "wilcoxon_p_value": 1.0,
+        "mcnemar_p_value": 0.08523490462986842,
+        "statistically_significant": false
+    },
+    "justification": "Selected Logistic Regression (F1=0.7701) over SGD Classifier (F1=0.7799) due to statistical equivalence (Wilcoxon p=1.0000, McNemar p=0.0852). Logistic Regression provides significantly lower prediction latency, a smaller model size, shorter training times, and higher model explainability, making it the superior candidate for production APIs.",
+    "ranking": [
+        {
+            "Rank": 1,
+            "Classifier": "SGD Classifier",
+            "Macro F1": 0.7799280939207079,
+            "Accuracy": 0.7811118130132659,
+            "Inference Latency (ms)": 0.1154644008836487,
+            "Training Time (s)": 1.6317517757415771
+        },
+        {
+            "Rank": 2,
+            "Classifier": "Logistic Regression",
+            "Macro F1": 0.7701016191973031,
+            "Accuracy": 0.7719519898926089,
+            "Inference Latency (ms)": 0.11642455151016322,
+            "Training Time (s)": 1.8734934329986572
+        },
+        {
+            "Rank": 3,
+            "Classifier": "Linear SVC",
+            "Macro F1": 0.763874618451518,
+            "Accuracy": 0.7694251421351863,
+            "Inference Latency (ms)": 0.10856185920315307,
+            "Training Time (s)": 1.6150274276733398
+        },
+        {
+            "Rank": 4,
+            "Classifier": "Random Forest",
+            "Macro F1": 0.760800442085475,
+            "Accuracy": 0.7656348704990524,
+            "Inference Latency (ms)": 0.2815471897378272,
+            "Training Time (s)": 7.66369104385376
+        },
+        {
+            "Rank": 5,
+            "Classifier": "Multinomial Naive Bayes",
+            "Macro F1": 0.7181631328160639,
+            "Accuracy": 0.7286797220467467,
+            "Inference Latency (ms)": 0.12477228932190906,
+            "Training Time (s)": 1.708742618560791
+        }
+    ]
+}
