@@ -1,5 +1,6 @@
 {
+  "_status": "HISTORICAL_PLACEHOLDER / UNUSED",
+  "_description": "This file is a legacy prototype stub and is NOT read by active runtime code. Rule-based aspect detectors (complaint_detector.py and positive_detector.py) use internally defined Python keyword dictionaries.",
   "complaints": {},
-  "highlights": {},
-  "_comment": "TODO: Define and export finalized aspect dictionary maps mapping operational themes to substring sets here."
+  "highlights": {}
 }

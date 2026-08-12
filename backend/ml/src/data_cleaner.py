@@ -13,7 +13,7 @@ def clean_data(df):
 
 if __name__ == "__main__":
 
-    df = load_data("../data/raw_reviews.csv")
+    df = load_data("../data/balanced_reviews.csv")
 
     print("Before:", df.shape)
 

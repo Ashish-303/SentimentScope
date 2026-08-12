@@ -5,74 +5,82 @@ __pycache__/
 *.pyd
 .ipynb_checkpoints/
 
-# Virtual Environments
+# Virtual Environments & IDE
 .venv/
 venv/
 ENV/
 env/
-bin/
-lib/
-include/
-pip-selfcheck.json
-
-# Node Modules and Web Caches
-node_modules/
-.npm
-.eslintcache
-package-lock.json
-
-# IDE and Project Settings
+.env
+.env.*
+!.env.example
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.swp
-.project
-.classpath
-.settings/
 
-# OS and System Files
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Build and Packaging Artifacts
+# Node Modules & Build Artifacts
+node_modules/
 dist/
 build/
 *.egg-info/
-*.gemini/
+.npm
 
-# Project Logs and Cache
+# OS Files & Logs
+.DS_Store
+Thumbs.db
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+logs/
 
-# Local Uploads and Temp Files
+# Datasets (Keep sample_reviews.csv for runtime demo/tests)
+backend/ml/data/*.csv
+!backend/ml/data/sample_reviews.csv
 backend/uploads/*
 !backend/uploads/.gitkeep
 
-# Large Datasets and Non-Project Materials
-backend/ml/data/raw_reviews.csv
-backend/ml/data/balanced_reviews_600k.csv
+# ML Model Archives
+backend/ml/models/archive/
+
+# Research Notebooks
+backend/ml/notebooks/
+
+# Internal Research Reports & Artifacts
+backend/ml/reports/
+!backend/ml/reports/figures/.gitkeep
+!backend/ml/reports/metrics/.gitkeep
+!backend/ml/reports/statistical_tests/.gitkeep
+!backend/ml/reports/tables/.gitkeep
+
+# Research Evaluation & Training Benchmark Scripts
+backend/ml/evaluation/audit_*.py
+backend/ml/evaluation/evaluate_*.py
+backend/ml/evaluation/generate_*.py
+backend/ml/evaluation/verify_reports.py
+backend/ml/evaluation/report_generator.py
+backend/ml/evaluation/statistical_tests.py
+backend/ml/training/run_*.py
+backend/ml/training/compare_models.py
+backend/ml/training/cross_validation.py
+backend/ml/training/hyperparameter_tuning.py
+backend/ml/training/train.py
+
+# Research Documents, Scripts & Master Governance Files
+SENTIMENTSCOPE_RESEARCH_PAPER_*.md
+SENTIMENTSCOPE_RESEARCH_PAPER_*.json
+CANONICAL_DATASET_FREEZE_REPORT.md
+DATASET_CITATION_RECOMMENDATION.md
+DEPLOYMENT_READINESS_REPORT.md
+IMPLEMENTATION_TRACKER.md
+RELEASE_FREEZE_REPORT.md
+REPOSITORY_CLEANUP_REPORT.md
+SentimentScope_Master_Guide.md
+sentiment_scope_handoff.md
+SentimentScope_GITHUB_CLEANUP_PHASE_6_6_REPORT.md
+sentimentscope_v2.js
+
+# Non-Project Binary Documents & Images
 *.docx
 *.doc
 *.pptx
 *.ppt
 *.pdf
 *.png
-*.js
-# Local Environment files
-.env
-.env.production
-.env.development
 
-# Log directories
-logs/
-backend/ml/reports/logs/
-
-# ML Model Archives
-backend/ml/models/archive/

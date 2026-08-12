@@ -1,202 +1,57 @@
-def detect_issue(review):
+"""
+Rule-Based Complaint Detector for SentimentScope.
 
-    review = str(review).lower()
+Identifies operational complaints and customer pain points across universal
+and product-category-specific aspect taxonomies.
+"""
 
-    categories = {
+import os
+import sys
+from typing import List, Optional
 
-        "Delivery": [
-            "delivery",
-            "shipping",
-            "courier",
-            "late",
-            "delay",
-            "arrived late",
-            "delayed"
-        ],
+# Ensure ML src directory is in path
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
 
-        "Packaging": [
-            "package",
-            "packaging",
-            "box",
-            "sealed",
-            "damaged package",
-            "poor packaging"
-        ],
-
-        "Quality": [
-            "broken",
-            "defective",
-            "faulty",
-            "damaged",
-            "poor quality",
-            "bad quality",
-            "cheap quality",
-            "worst quality",
-            "low quality",
-            "stopped working",
-            "not working",
-            "doesn't work",
-            "does not work",
-            "broke",
-            "cracked"
-        ],
-
-        "Performance": [
-            "slow",
-            "lag",
-            "lagging",
-            "freezing",
-            "performance",
-            "speed",
-            "sluggish"
-        ],
-
-        "Battery": [
-            "battery",
-            "charging",
-            "charge",
-            "drains fast",
-            "battery life",
-            "overheating"
-        ],
-
-        "Compatibility": [
-            "compatible",
-            "compatibility",
-            "connect",
-            "connection",
-            "bluetooth",
-            "pairing",
-            "sync",
-            "supported"
-        ],
-
-        "Service": [
-            "customer support",
-            "support",
-            "refund",
-            "seller",
-            "service",
-            "replacement",
-            "help desk"
-        ],
-
-        "Pricing": [
-            "expensive",
-            "overpriced",
-            "too costly",
-            "not worth the price",
-            "high price",
-            "cost"
-        ],
-
-        "Features": [
-            "feature",
-            "function",
-            "option",
-            "missing feature",
-            "missing functionality"
-        ],
-
-        "Disappointment": [
-        "disappointed",
-        "terrible",
-        "worst purchase",
-        "do not buy",
-        "bad experience",
-        "waste of money",
-        "not worth it"
-       ],
-
-        "Durability": [
-        "wear out",
-        "lasted",
-        "durable",
-        "durability",
-        "fell apart"
-        ],
-
-        "Size & Fit": [
-        "too small",
-        "too large",
-        "fit",
-        "fitting",
-        "size issue"
-        ],
-
-        "Content": [
-        "boring",
-        "poor writing",
-        "confusing",
-        "bad story",
-        "bad content"
-        ],
-
-        "Accuracy": [
-        "incorrect",
-        "wrong",
-        "inaccurate"
-       ]
+from product_category_taxonomy import extract_complaints, UNIVERSAL_COMPLAINTS, CATEGORY_SPECIFIC_COMPLAINTS
 
 
+def detect_issue(
+    review: str,
+    category: Optional[str] = None,
+    sentiment: Optional[str] = None
+) -> List[str]:
+    """
+    Extracts complaint aspects from review text using product-category-aware taxonomy.
 
-    }
+    Args:
+        review: Raw user review text string.
+        category: Optional product category string (e.g. 'Electronics', 'Fashion').
+        sentiment: Optional predicted sentiment string.
 
-    found_issues = []
-
-    for issue, keywords in categories.items():
-
-        for keyword in keywords:
-
-            if keyword in review:
-
-                found_issues.append(issue)
-                break
-
-    return found_issues
+    Returns:
+        List of identified complaint category names.
+    """
+    return extract_complaints(review, product_category=category, sentiment=sentiment)
 
 
 if __name__ == "__main__":
-
-    reviews = [
-
-        "Delivery was delayed by 5 days",
-
-        "The product stopped working after 2 days",
-
-        "The package arrived damaged",
-
-        "Customer support never replied",
-
-        "Battery drains fast and charging is slow",
-
-        "Bluetooth pairing does not work",
-
-        "The product is too expensive for the features offered",
-
-        "Delivery was delayed and the product arrived broken"
-        "Very disappointed with this item",
-        "I regret buying this product",
-        "Not satisfied with the quality",
-        "The package arrived damaged and I am disappointed"
+    test_reviews = [
+        ("Delivery was delayed by 5 days", "Home & Kitchen"),
+        ("The product stopped working after 2 days", "Electronics"),
+        ("The package arrived damaged", "Sports & Outdoors"),
+        ("Customer support never replied", "Tools & Appliances"),
+        ("Battery drains fast and charging is slow", "Electronics"),
+        ("Bluetooth pairing does not work", "Electronics"),
+        ("The product is too expensive for the features offered", "Fashion"),
+        ("The shirt fits too tight and stitching is coming out", "Fashion"),
+        ("Cream caused severe skin rash and burning sensation", "Beauty"),
+        ("Not satisfied with the quality", "Home & Kitchen")
     ]
 
-    for review in reviews:
-
-        print(review)
-
-        print(detect_issue(review))
-
+    for rev, cat in test_reviews:
+        print(f"Review:   {rev}")
+        print(f"Category: {cat}")
+        print(f"Detected: {detect_issue(rev, category=cat)}")
         print("-" * 60)
-
-
-
-
-   
-
-   
-
-    
-
-   
-    

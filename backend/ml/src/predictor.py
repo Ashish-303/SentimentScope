@@ -10,7 +10,7 @@ import time
 import joblib
 import logging
 import threading
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # Ensure backend and ML directories are in the system path for dynamic unpickling
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -183,11 +183,12 @@ def predict_sentiment(review: str) -> str:
     return predictor.predict(review)
 
 
-def analyze_review(review: str) -> Dict[str, Any]:
-    """Runs complete review analysis (sentiment + rule-based aspect mining).
+def analyze_review(review: str, category: Optional[str] = None) -> Dict[str, Any]:
+    """Runs complete review analysis (sentiment + product-category-aware aspect mining).
 
     Args:
         review: Raw user review text string.
+        category: Optional product category string.
 
     Returns:
         Dictionary mapping input review, predicted sentiment, issues, and highlights.
@@ -198,13 +199,13 @@ def analyze_review(review: str) -> Dict[str, Any]:
     issues = []
     positive_features = []
 
-    # Aspect Mining extraction based on sentiment
+    # Aspect Mining extraction based on sentiment & category
     if str(sentiment).lower() == "negative":
-        issues = detect_issue(review_str)
+        issues = detect_issue(review_str, category=category, sentiment=sentiment)
         if len(issues) == 0:
             issues = ["Other"]
     elif str(sentiment).lower() == "positive":
-        positive_features = detect_positive_features(review_str)
+        positive_features = detect_positive_features(review_str, category=category, sentiment=sentiment)
         if len(positive_features) == 0:
             positive_features = ["General Satisfaction"]
 

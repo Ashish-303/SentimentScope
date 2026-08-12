@@ -68,18 +68,21 @@ def analyze_csv(csv_path: str) -> pd.DataFrame:
     positive_features = []
     total_reviews = len(reviews_list)
 
-    logger.info("Executing aspect mining on predicted sentiments...")
-    for index, (review, sentiment) in enumerate(zip(reviews_list, sentiments), start=1):
+    # Extract category list
+    categories_list = [str(c) if pd.notna(c) else None for c in df[category_col]]
+
+    logger.info("Executing product-category-aware aspect mining on predicted sentiments...")
+    for index, (review, sentiment, category) in enumerate(zip(reviews_list, sentiments, categories_list), start=1):
         try:
             issues_list = []
             positive_features_list = []
 
             if str(sentiment).lower() == "negative":
-                issues_list = detect_issue(review)
+                issues_list = detect_issue(review, category=category, sentiment=sentiment)
                 if len(issues_list) == 0:
                     issues_list = ["Other"]
             elif str(sentiment).lower() == "positive":
-                positive_features_list = detect_positive_features(review)
+                positive_features_list = detect_positive_features(review, category=category, sentiment=sentiment)
                 if len(positive_features_list) == 0:
                     positive_features_list = ["General Satisfaction"]
 

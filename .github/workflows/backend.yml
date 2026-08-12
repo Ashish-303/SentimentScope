@@ -43,7 +43,12 @@ jobs:
       run: |
         python -m pytest backend/tests/ -v
 
-    # 7. Print custom success summary
+    # 7. Execute Research Integrity Verification
+    - name: Research Integrity Verification
+      run: |
+        python backend/ml/evaluation/verify_reports.py
+
+    # 8. Print custom success summary
     - name: Display Test Summary
       if: always()
       run: |

@@ -1,151 +1,64 @@
-def detect_positive_features(review):
+"""
+Rule-Based Positive Highlight Detector for SentimentScope.
 
-    review = str(review).lower()
+Identifies product highlights, strengths, and customer delight signals across
+universal and product-category-specific aspect taxonomies with negation guarding.
+"""
 
-    categories = {
+import os
+import sys
+from typing import List, Optional
 
-        "Quality": [
-            "excellent quality",
-            "great quality",
-            "high quality",
-            "premium quality",
-            "well made",
-            "good quality",
-            "top notch",
-            "highly recommend",
-            "great product",
-            "excellent product"
-        ],
+# Ensure ML src directory is in path
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
 
-        "Performance": [
-            "works perfectly",
-            "great performance",
-            "performance",
-             "works fast",
-            "runs fast",
-            "fast performance",
-            "smooth",
-            "responsive",
-            "smooth",
-            "responsive",
-            "efficient",
-            "works great",
-            "works flawlessly"
-        ],
+from product_category_taxonomy import extract_positive_highlights, UNIVERSAL_HIGHLIGHTS, CATEGORY_SPECIFIC_HIGHLIGHTS
 
-        "Features": [
-            "great features",
-            "useful feature",
-            "feature rich",
-            "lots of features",
-            "excellent features",
-            "exactly what i needed"
-        ],
 
-        "Packaging": [
-            "well packaged",
-            "beautiful packaging",
-            "good packaging",
-            "nicely packed",
-            "great packaging"
-        ],
+def detect_positive_features(
+    review: str,
+    category: Optional[str] = None,
+    sentiment: Optional[str] = None,
+    use_sentiment_fallback: bool = True
+) -> List[str]:
+    """
+    Extracts positive highlight aspects from review text using product-category-aware taxonomy.
 
-        "Delivery": [
-            "fast delivery",
-            "quick delivery",
-            "arrived on time",
-            "delivered quickly",
-            "fast shipping"
-        ],
+    Args:
+        review: Raw user review text string.
+        category: Optional product category string (e.g. 'Electronics', 'Fashion').
+        sentiment: Optional predicted sentiment string.
+        use_sentiment_fallback: Whether to use conservative sentiment-aware fallback.
 
-        "Value for Money": [
-            "worth the price",
-            "value for money",
-            "great value",
-            "good value",
-            "worth every penny",
-            "well worth the price"
-        ],
-
-        "Design": [
-            "beautiful design",
-            "stylish",
-            "looks great",
-            "attractive",
-            "nice design"
-        ],
-
-        "Ease of Use": [
-            "easy to use",
-            "user friendly",
-            "simple to use",
-            "easy setup"
-        ],
-
-        "Durability": [
-            "durable",
-            "long lasting",
-            "sturdy",
-            "solid build"
-        ]
-    }
-
-    found_features = []
-
-    for feature, keywords in categories.items():
-
-        for keyword in keywords:
-
-            if keyword in review:
-
-                found_features.append(
-                    feature
-                )
-
-                break
-
-    if len(found_features) == 0:
-
-        found_features.append(
-            "General Satisfaction"
-        )
-
-    return found_features
+    Returns:
+        List of identified positive highlight category names.
+    """
+    return extract_positive_highlights(
+        review,
+        product_category=category,
+        sentiment=sentiment,
+        use_sentiment_fallback=use_sentiment_fallback
+    )
 
 
 if __name__ == "__main__":
-
-    reviews = [
-
-        "Excellent quality and works perfectly",
-
-        "Worth every penny. Great value.",
-
-        "Fast delivery and beautiful packaging",
-
-        "Easy to use and durable",
-
-        "Stylish design and great features",
-
-        "Highly recommend. Excellent product.",
-
-        "Top-notch build and performance.",
-
-        "Exactly what I needed.",
-
-        "Great product! Works flawlessly.",
-
-        "Fast shipping and great packaging."
+    test_reviews = [
+        ("Excellent quality and works perfectly", "Home & Kitchen", "Positive"),
+        ("Worth every penny. Great value.", "Sports & Outdoors", "Positive"),
+        ("Fast delivery and beautiful packaging", "Tools & Appliances", "Positive"),
+        ("Easy to use and durable", "Home & Kitchen", "Positive"),
+        ("Stylish design and great features", "Electronics", "Positive"),
+        ("The bass is super and sound quality is great", "Electronics", "Positive"),
+        ("The shirt fits perfectly and fabric is soft", "Fashion", "Positive"),
+        ("Smells wonderful and gentle on skin", "Beauty", "Positive"),
+        ("Not good quality, doesn't work", "Electronics", "Negative"),
+        ("Worst product ever", "Home & Kitchen", "Negative")
     ]
 
-    for review in reviews:
-
-        print(review)
-
-        print(
-            detect_positive_features(
-                review
-            )
-        )
-
-        print("-" * 50)
+    for rev, cat, sent in test_reviews:
+        print(f"Review:    {rev}")
+        print(f"Category:  {cat} | Sentiment: {sent}")
+        print(f"Detected:  {detect_positive_features(rev, category=cat, sentiment=sent)}")
+        print("-" * 60)
