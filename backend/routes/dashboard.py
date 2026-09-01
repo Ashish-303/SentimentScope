@@ -37,9 +37,17 @@ def dashboard():
         df = pd.read_csv(csv_path)
         dashboard_data = generate_dashboard(df)
 
+        # Return all analyzed rows for the frontend Data Table and Analytics.
+        display_cols = [c for c in [
+            "Product_Name", "Category", "Review_Text",
+            "Predicted_Sentiment", "Detected_Issues", "Positive_Features"
+        ] if c in df.columns]
+        review_rows = df[display_cols].fillna("").to_dict(orient="records")
+
         return jsonify({
             "status": "success",
-            "data": dashboard_data
+            "data": dashboard_data,
+            "review_data": review_rows
         })
 
     except Exception as e:

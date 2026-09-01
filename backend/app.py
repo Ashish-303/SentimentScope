@@ -36,14 +36,20 @@ from routes.dashboard import dashboard_bp
 # LOGGING FOUNDATION
 # ==============================================================================
 log_level_val = getattr(logging, config.LOG_LEVEL, logging.INFO)
+handlers = [logging.StreamHandler(sys.stdout)]
+try:
+    if hasattr(config, "APP_LOG_PATH") and config.APP_LOG_PATH:
+        os.makedirs(os.path.dirname(config.APP_LOG_PATH), exist_ok=True)
+        handlers.append(logging.FileHandler(config.APP_LOG_PATH, encoding="utf-8"))
+except Exception:
+    pass
+
 logging.basicConfig(
     level=log_level_val,
     format="%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s",
-    handlers=[
-        logging.FileHandler(config.APP_LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=handlers
 )
+
 logger = logging.getLogger("SentimentScope")
 logger.info("Starting SentimentScope backend initialization...")
 
@@ -57,8 +63,8 @@ app.secret_key = config.SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 
-# Enable Cross-Origin Resource Sharing (CORS)
-CORS(app)
+# Enable Cross-Origin Resource Sharing (CORS) for production clients
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Register endpoints via Blueprints
 app.register_blueprint(analyze_bp)
@@ -76,7 +82,7 @@ def home():
         "project": "SentimentScope",
         "version": "2.0",
         "status": "Running",
-        "description": "Sentiment Analysis and Review Insights B.Tech Project",
+        "description": "AI Product Review Intelligence Platform",
         "available_endpoints": [
             "/",
             "/analyze",
@@ -164,9 +170,11 @@ def swagger_docs():
 # SERVER EXECUTION
 # ==============================================================================
 if __name__ == "__main__":
-    logger.info("Launching Flask server on 0.0.0.0:5000...")
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_DEBUG", "False").lower() in ["true", "1"]
+    logger.info(f"Launching Flask server on 0.0.0.0:{port} (debug={debug})...")
     app.run(
         host="0.0.0.0",
-        port=5000,
-        debug=True
+        port=port,
+        debug=debug
     )

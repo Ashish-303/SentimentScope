@@ -73,6 +73,17 @@ def upload():
         dashboard = generate_dashboard(result_df)
 
         # ==========================
+        # REVIEW DATA (for frontend table)
+        # ==========================
+        # Return all analyzed rows for the Data Table and Analytics.
+        # Only expose non-sensitive display columns.
+        display_cols = [c for c in [
+            "Product_Name", "Category", "Review_Text",
+            "Predicted_Sentiment", "Detected_Issues", "Positive_Features"
+        ] if c in result_df.columns]
+        review_rows = result_df[display_cols].fillna("").to_dict(orient="records")
+
+        # ==========================
         # RESPONSE
         # ==========================
         return jsonify({
@@ -80,7 +91,8 @@ def upload():
             "filename": filename,
             "rows_processed": len(result_df),
             "columns": result_df.columns.tolist(),
-            "dashboard": dashboard
+            "dashboard": dashboard,
+            "review_data": review_rows
         })
 
     except ValueError as e:

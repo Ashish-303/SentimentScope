@@ -119,29 +119,22 @@ REPORT_TABLES_DIR: str = os.path.join(REPORT_DIR, "tables")
 REPORT_FIGURES_DIR: str = os.path.join(REPORT_DIR, "figures")
 REPORT_METRICS_DIR: str = os.path.join(REPORT_DIR, "metrics")
 REPORT_STATS_DIR: str = os.path.join(REPORT_DIR, "statistical_tests")
-REPORT_LOGS_DIR: str = os.path.join(REPORT_DIR, "logs")
-
 # Runtime application log filepath
-APP_LOG_PATH: str = os.path.join(REPORT_LOGS_DIR, "app.log")
+LOGS_DIR: str = os.path.join(BASE_DIR, "logs")
+APP_LOG_PATH: str = os.path.join(LOGS_DIR, "app.log")
 
 # Environment security credentials
 SECRET_KEY: str = os.getenv("SECRET_KEY", "default_dev_secret_key_sentiment_scope_71829")
 LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
-# ==============================================================================
-# CONFIGURATION VALIDATION
-# ==============================================================================
 # Automatically create all required runtime directories on startup
 for folder_path in [
     UPLOAD_FOLDER,
-    REPORT_DIR,
-    REPORT_TABLES_DIR,
-    REPORT_FIGURES_DIR,
-    REPORT_METRICS_DIR,
-    REPORT_STATS_DIR,
-    REPORT_LOGS_DIR,
     CONFIGS_DIR,
     MODEL_DIR,
-    DATA_DIR
+    DATA_DIR,
+    LOGS_DIR
 ]:
     os.makedirs(folder_path, exist_ok=True)
+
+

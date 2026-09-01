@@ -21,17 +21,17 @@ ML_SRC_DIR = os.path.join(BACKEND_DIR, "ml", "src")
 if ML_SRC_DIR not in sys.path:
     sys.path.insert(0, ML_SRC_DIR)
 
-ML_TRAINING_DIR = os.path.join(BACKEND_DIR, "ml", "training")
-if ML_TRAINING_DIR not in sys.path:
-    sys.path.insert(0, ML_TRAINING_DIR)
-
 import config
+import pipeline_builder
+sys.modules['pipeline_builder'] = pipeline_builder
+
 from text_normalizer import clean_text
 from complaint_detector import detect_issue
 from positive_detector import detect_positive_features
 
 # Initialize Logger
 logger = logging.getLogger("SentimentScope.Predictor")
+
 
 
 class SentimentPredictor:

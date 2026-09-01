@@ -10,12 +10,11 @@ import sys
 import logging
 from typing import Any, Union
 
-# Ensure backend and ML source directories are in sys.path
-BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if BACKEND_DIR not in sys.path:
-    sys.path.insert(0, BACKEND_DIR)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
-ML_SRC = os.path.join(BACKEND_DIR, "ml", "src")
+ML_SRC = os.path.join(BASE_DIR, "ml", "src")
 if ML_SRC not in sys.path:
     sys.path.insert(0, ML_SRC)
 
@@ -26,7 +25,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.pipeline import Pipeline
 
-# Initialize Logger
 logger = logging.getLogger("SentimentScope.PipelineBuilder")
 
 
@@ -40,7 +38,6 @@ class DynamicSelectKBest(SelectKBest):
     def fit(self, X, y=None):
         n_features = X.shape[1]
         
-        # Save original k parameter if not cached
         if not hasattr(self, "_original_k"):
             self._original_k = self.k
             
@@ -68,49 +65,23 @@ def build_sentiment_pipeline(
     chi2_k: Union[int, str] = config.CHI2_FEATURES_K,
     chi2_enabled: bool = config.CHI2_ENABLED
 ) -> Pipeline:
-    """Builds a unified, leakage-free Scikit-learn Pipeline.
-
-    Args:
-        classifier: Instantiated sklearn-compatible estimator class.
-        max_features: Maximum feature limit for TF-IDF.
-        ngram_range: N-gram range tuple configuration.
-        chi2_k: Top K features to retain in Chi-Square selection (or "all").
-        chi2_enabled: Flag indicating if Chi-Square selection should be included.
-
-    Returns:
-        An un-fit Scikit-learn Pipeline wrapper object.
-
-    Raises:
-        TypeError: If classifier is missing fit/predict/predict_proba interfaces.
-        ValueError: If configuration or validation parameters are invalid.
-    """
+    """Builds a unified, leakage-free Scikit-learn Pipeline."""
     logger.info("Starting unified Scikit-learn Pipeline construction...")
 
-    # ==========================================
-    # CLASSIFIER VALIDATION
-    # ==========================================
     if classifier is None:
         raise ValueError("Classifier estimator instance cannot be None.")
     
     if not (hasattr(classifier, "fit") and (hasattr(classifier, "predict") or hasattr(classifier, "predict_proba"))):
         raise TypeError("Classifier must be an instantiated Scikit-learn estimator.")
 
-    # ==========================================
-    # TF-IDF PARAMETER VALIDATION & INITIALIZATION
-    # ==========================================
     if not isinstance(max_features, int) or max_features <= 0:
         raise ValueError(f"Invalid max_features '{max_features}'. Must be a positive integer.")
     
     if not isinstance(ngram_range, tuple) or len(ngram_range) != 2 or ngram_range[0] < 1 or ngram_range[1] < ngram_range[0]:
         raise ValueError(f"Invalid ngram_range '{ngram_range}'. Must be a tuple of (min_n, max_n).")
 
-    logger.info(
-        f"Initializing TfidfVectorizer: max_features={max_features}, ngram_range={ngram_range}, "
-        f"sublinear_tf={config.TFIDF_SUBLINEAR_TF}, min_df={config.TFIDF_MIN_DF}, max_df={config.TFIDF_MAX_DF}"
-    )
-
     vectorizer = TfidfVectorizer(
-        preprocessor=clean_text,  # Clean text string directly on feature extraction fit/transform
+        preprocessor=clean_text,
         max_features=max_features,
         ngram_range=ngram_range,
         min_df=config.TFIDF_MIN_DF,
@@ -121,9 +92,6 @@ def build_sentiment_pipeline(
         norm=config.TFIDF_NORM
     )
 
-    # ==========================================
-    # CHI-SQUARE VALIDATION & INITIALIZATION
-    # ==========================================
     pipeline_steps = [("tfidf", vectorizer)]
 
     if chi2_enabled:
@@ -138,54 +106,8 @@ def build_sentiment_pipeline(
         else:
             raise TypeError(f"Invalid Chi-Square K type '{type(chi2_k)}'. Must be int or string 'all'.")
 
-        logger.info(f"Initializing Chi-Square Selector (DynamicSelectKBest): score_func=chi2, k={k_val}")
         selector = DynamicSelectKBest(score_func=chi2, k=k_val)
         pipeline_steps.append(("chi2", selector))
-    else:
-        logger.info("Chi-Square Feature Selection is disabled in configuration. Skipping step.")
 
-    # ==========================================
-    # CLASSIFIER INJECTION & PIPELINE BUILD
-    # ==========================================
     pipeline_steps.append(("classifier", classifier))
-    
-    logger.info(f"Dynamically injecting classifier: {classifier.__class__.__name__}")
-    pipeline = Pipeline(pipeline_steps)
-
-    logger.info("Unified Scikit-learn Pipeline compiled successfully.")
-    return pipeline
-
-
-# ==========================================
-# TEST RUNNER
-# ==========================================
-if __name__ == "__main__":
-    from sklearn.linear_model import LogisticRegression
-    import joblib
-
-    print("Executing Pipeline Construction Verification Run...")
-    print("=" * 60)
-    
-    try:
-        clf = LogisticRegression(random_state=config.FEATURE_RANDOM_STATE)
-        sentiment_pipeline = build_sentiment_pipeline(clf)
-        
-        # Test Serialization
-        temp_model_path = os.path.join(config.MODEL_DIR, "test_pipeline_structure.pkl")
-        print(f"Testing pipeline serialization to: {temp_model_path}")
-        joblib.dump(sentiment_pipeline, temp_model_path)
-        
-        # Test Deserialization
-        print("Testing pipeline deserialization...")
-        loaded_pipeline = joblib.load(temp_model_path)
-        print("Deserialization complete.")
-        
-        # Cleanup
-        if os.path.exists(temp_model_path):
-            os.remove(temp_model_path)
-            
-        print("Pipeline verification completed successfully with zero exceptions.")
-        
-    except Exception as e:
-        print(f"Exception during verification: {e}")
-        sys.exit(1)
+    return Pipeline(pipeline_steps)

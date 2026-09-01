@@ -1,86 +1,52 @@
-# Python Caches and Bytecode
+# Environment & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Python Caches & Bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyd
 .ipynb_checkpoints/
+.pytest_cache/
 
-# Virtual Environments & IDE
-.venv/
+# Virtual Environments
 venv/
-ENV/
+.venv/
 env/
-.env
-.env.*
-!.env.example
+ENV/
+
+# Node & Frontend Build Artifacts
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+build/
+.npm/
+
+# IDE & OS Files
 .vscode/
 .idea/
 *.swp
-
-# Node Modules & Build Artifacts
-node_modules/
-dist/
-build/
-*.egg-info/
-.npm
-
-# OS Files & Logs
 .DS_Store
 Thumbs.db
 *.log
-logs/
 
-# Datasets (Keep sample_reviews.csv for runtime demo/tests)
+# Runtime Uploads & Datasets
+backend/uploads/*.csv
+!backend/uploads/.gitkeep
 backend/ml/data/*.csv
 !backend/ml/data/sample_reviews.csv
-backend/uploads/*
-!backend/uploads/.gitkeep
 
-# ML Model Archives
-backend/ml/models/archive/
-
-# Research Notebooks
-backend/ml/notebooks/
-
-# Internal Research Reports & Artifacts
-backend/ml/reports/
-!backend/ml/reports/figures/.gitkeep
-!backend/ml/reports/metrics/.gitkeep
-!backend/ml/reports/statistical_tests/.gitkeep
-!backend/ml/reports/tables/.gitkeep
-
-# Research Evaluation & Training Benchmark Scripts
-backend/ml/evaluation/audit_*.py
-backend/ml/evaluation/evaluate_*.py
-backend/ml/evaluation/generate_*.py
-backend/ml/evaluation/verify_reports.py
-backend/ml/evaluation/report_generator.py
-backend/ml/evaluation/statistical_tests.py
-backend/ml/training/run_*.py
-backend/ml/training/compare_models.py
-backend/ml/training/cross_validation.py
-backend/ml/training/hyperparameter_tuning.py
-backend/ml/training/train.py
-
-# Research Documents, Scripts & Master Governance Files
-SENTIMENTSCOPE_RESEARCH_PAPER_*.md
-SENTIMENTSCOPE_RESEARCH_PAPER_*.json
-CANONICAL_DATASET_FREEZE_REPORT.md
-DATASET_CITATION_RECOMMENDATION.md
-DEPLOYMENT_READINESS_REPORT.md
-IMPLEMENTATION_TRACKER.md
-RELEASE_FREEZE_REPORT.md
-REPOSITORY_CLEANUP_REPORT.md
-SentimentScope_Master_Guide.md
-sentiment_scope_handoff.md
-SentimentScope_GITHUB_CLEANUP_PHASE_6_6_REPORT.md
-sentimentscope_v2.js
-
-# Non-Project Binary Documents & Images
+# Temporary Files & Binaries
 *.docx
 *.doc
 *.pptx
 *.ppt
 *.pdf
-*.png
+
 
