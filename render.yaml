@@ -5,7 +5,8 @@ services:
     region: singapore
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --chdir backend app:app
+    startCommand: gunicorn -b 0.0.0.0:${PORT:-5000} --chdir backend app:app
+
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8
