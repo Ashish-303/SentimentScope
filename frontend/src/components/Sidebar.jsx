@@ -6,16 +6,22 @@ import { Sun, Moon } from 'lucide-react';
 import {
   HomeIcon, DataIcon, AnalyticsIcon, HighlightsIcon,
   HistoryIcon, AboutIcon, SettingsIcon, PanelLeftIcon,
+  TrendingUpIcon,
 } from './Icons';
 
+const ENABLE_PERFORMANCE_PAGE = import.meta.env.VITE_ENABLE_PERFORMANCE_PAGE !== 'false';
+
 const NAV_ITEMS = [
-  { path: '/',           Icon: HomeIcon,       label: 'Home',      end: true  },
-  { path: '/data',       Icon: DataIcon,       label: 'Data',      end: false },
-  { path: '/analytics',  Icon: AnalyticsIcon,  label: 'Analytics', end: false },
-  { path: '/highlights', Icon: HighlightsIcon, label: 'Insights',  end: false },
-  { path: '/history',    Icon: HistoryIcon,    label: 'History',   end: false },
-  { path: '/about',      Icon: AboutIcon,      label: 'About',     end: false },
-  { path: '/settings',   Icon: SettingsIcon,   label: 'Settings',  end: false },
+  { path: '/',           Icon: HomeIcon,       label: 'Home',        end: true  },
+  { path: '/data',       Icon: DataIcon,       label: 'Data',        end: false },
+  { path: '/analytics',  Icon: AnalyticsIcon,  label: 'Analytics',   end: false },
+  ...(ENABLE_PERFORMANCE_PAGE ? [
+    { path: '/performance', Icon: TrendingUpIcon, label: 'Performance', end: false }
+  ] : []),
+  { path: '/highlights', Icon: HighlightsIcon, label: 'Insights',    end: false },
+  { path: '/history',    Icon: HistoryIcon,    label: 'History',     end: false },
+  { path: '/about',      Icon: AboutIcon,      label: 'About',       end: false },
+  { path: '/settings',   Icon: SettingsIcon,   label: 'Settings',    end: false },
 ];
 
 export default function Sidebar() {
@@ -89,7 +95,7 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className="sidebar-nav" aria-label="Application pages">
           {NAV_ITEMS.map(({ path, Icon, label, end }) => {
-            const hasData = uploadResult && (path === '/data' || path === '/analytics' || path === '/highlights');
+            const hasData = uploadResult && (path === '/data' || path === '/analytics' || path === '/performance' || path === '/highlights');
             return (
               <NavLink
                 key={path}

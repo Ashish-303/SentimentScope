@@ -12,6 +12,7 @@ SentimentScope is a modern, full-stack AI platform designed to convert unstructu
 - **Single-Review Ingestion:** Instantly analyze individual review text to inspect sentiment scores and aspect highlights.
 - **Aspect Mining & Complaint Extraction:** Automatically identifies product grievances (e.g., Quality, Packaging, Price, Service) and strengths (e.g., Performance, Usability).
 - **Interactive Analytics Dashboard:** Real-time visualization of sentiment distributions, category ratings, and feedback trends using responsive Recharts widgets.
+- **Product Performance Intelligence:** Executive product rankings (Top & Bottom 10), risk vs. review volume bubble analysis, common complaint frequencies, worst-5 breakdown, and multidimensional product quality radar profiles.
 - **Dual Theme Support:** Toggle between **Dark Intelligence** mode and high-contrast **Light Research** mode.
 - **RESTful API Gateway:** Clean Flask API backend serving lightweight JSON payloads.
 
@@ -32,9 +33,12 @@ SentimentScope/
 ├── frontend/                 # React + Vite Client Application
 │   ├── src/
 │   │   ├── api/              # Axios API client hooks
-│   │   ├── components/       # UI Cards, Sidebars, Drawers & Badges
+│   │   ├── components/       # UI Cards, Sidebars, Drawers, Badges & Performance charts
+│   │   │   └── performance/  # Top/Bottom, Risk Bubble, Complaint & Radar components
 │   │   ├── context/          # App & Theme state context
-│   │   ├── pages/            # Dashboard views (Home, Analytics, Data, Highlights, About)
+│   │   ├── pages/            # Views (Home, Analytics, Performance, Data, Highlights, About)
+│   │   ├── services/         # Performance service API client
+│   │   ├── utils/            # Performance calculations & category color mappings
 │   │   └── App.jsx
 │   ├── package.json
 │   ├── vite.config.js
@@ -43,7 +47,9 @@ SentimentScope/
 ├── backend/                  # Flask REST API Gateway & Inference Server
 │   ├── app.py                # Main Flask entry point
 │   ├── config.py             # Path & runtime configuration manager
-│   ├── routes/               # API route blueprints (/upload, /analyze, /dashboard)
+│   ├── routes/               # API route blueprints (/upload, /analyze, /dashboard, /api/performance)
+│   ├── services/             # Performance data & analytics services
+│   ├── utils/                # Pure performance aggregation math & risk algorithms
 │   ├── ml/
 │   │   ├── models/           # Production trained ML model (.pkl)
 │   │   ├── data/             # Runtime sample datasets
@@ -136,6 +142,7 @@ Copy `.env.example` to `.env` in your project root or configure the variables in
 | Variable | Description | Default / Example |
 | :--- | :--- | :--- |
 | `VITE_API_URL` | Render Backend API URL (Frontend) | `https://sentimentscope-backend.onrender.com` |
+| `VITE_ENABLE_PERFORMANCE_PAGE` | Feature flag to toggle Performance page | `true` |
 | `PORT` | Backend server port | `5000` |
 | `SECRET_KEY` | Flask session secret key | `your_production_secret_key` |
 | `LOG_LEVEL` | Application logging verbosity | `INFO` |

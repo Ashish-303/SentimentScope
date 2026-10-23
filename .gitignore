@@ -45,8 +45,12 @@ backend/ml/data/*.csv
 # Temporary Files & Binaries
 *.docx
 *.doc
+*.docx.txt
 *.pptx
 *.ppt
 *.pdf
+
+# Internal Documentation & Manifests
+docs/
 
 

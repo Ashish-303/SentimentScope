@@ -10,11 +10,14 @@ import Processing from './pages/Processing';
 import Data from './pages/Data';
 import ReviewDetail from './pages/ReviewDetail';
 import Analytics from './pages/Analytics';
+import Performance from './pages/Performance';
 import Highlights from './pages/Highlights';
 import History from './pages/History';
 import About from './pages/About';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+
+const ENABLE_PERFORMANCE_PAGE = import.meta.env.VITE_ENABLE_PERFORMANCE_PAGE !== 'false';
 
 function AppContent() {
   const location = useLocation();
@@ -31,6 +34,9 @@ function AppContent() {
             <Route path="/data"        element={<Data />} />
             <Route path="/data/:id"    element={<ReviewDetail />} />
             <Route path="/analytics"   element={<Analytics />} />
+            {ENABLE_PERFORMANCE_PAGE && (
+              <Route path="/performance" element={<Performance />} />
+            )}
             <Route path="/highlights"  element={<Highlights />} />
             <Route path="/history"     element={<History />} />
             <Route path="/about"       element={<About />} />

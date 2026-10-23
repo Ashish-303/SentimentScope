@@ -31,6 +31,7 @@ import config
 from routes.analyze import analyze_bp
 from routes.upload import upload_bp
 from routes.dashboard import dashboard_bp
+from routes.performance import performance_bp
 
 # ==============================================================================
 # LOGGING FOUNDATION
@@ -70,6 +71,7 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.register_blueprint(analyze_bp)
 app.register_blueprint(upload_bp)
 app.register_blueprint(dashboard_bp)
+app.register_blueprint(performance_bp)
 
 # ==============================================================================
 # ROUTES
@@ -88,6 +90,7 @@ def home():
             "/analyze",
             "/upload",
             "/dashboard",
+            "/api/performance",
             "/health",
             "/docs",
             "/swagger"
