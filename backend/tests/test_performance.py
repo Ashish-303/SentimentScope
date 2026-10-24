@@ -175,3 +175,134 @@ def test_api_performance_datasets_endpoint(client):
     assert json_data["status"] == "success"
     assert isinstance(json_data["datasets"], list)
     assert len(json_data["datasets"]) > 0
+
+
+def test_best_products_tie_detection():
+    """Verifies that multiple products with the top score are detected as ties."""
+    data = [
+        {"Product_Name": "Top Prod 1", "Category": "Electronics", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""},
+        {"Product_Name": "Top Prod 1", "Category": "Electronics", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""},
+        {"Product_Name": "Top Prod 2", "Category": "Fashion", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""},
+        {"Product_Name": "Top Prod 2", "Category": "Fashion", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""},
+        {"Product_Name": "Lower Prod", "Category": "Home", "Predicted_Sentiment": "Negative", "Detected_Issues": "Quality", "Positive_Features": ""},
+    ]
+    df = pd.DataFrame(data)
+    res = aggregate_product_performance(df, min_reviews=2)
+    kpis = res["kpis"]
+    assert len(kpis["best_products"]) == 2
+    assert {p["name"] for p in kpis["best_products"]} == {"Top Prod 1", "Top Prod 2"}
+    assert kpis["best_product"]["score"] == 100.0
+
+
+# ============================================================================
+# Task 1 — Quality Score Validity (7 Controlled Cases)
+# ============================================================================
+def test_task1_genuine_aspect_evidence():
+    """Case 1: Direct aspect evidence correctly calculates score from mention ratio."""
+    df = pd.DataFrame([
+        {"Product_Name": "P1", "Category": "Tech", "Predicted_Sentiment": "Positive", "Detected_Issues": "Quality", "Positive_Features": "Quality, Quality"}
+    ])
+    res = aggregate_product_performance(df, min_reviews=1)
+    p1 = next(p for p in res["quality_profiles"] if p["product_name"] == "P1")
+    q_dim = p1["dimensions"]["Quality"]
+    assert q_dim["has_direct_evidence"] is True
+    # 2 positive mentions, 1 negative mention -> 66.7
+    assert q_dim["score"] == 66.7
+    assert q_dim["positive_mentions"] == 2
+    assert q_dim["negative_mentions"] == 1
+
+
+def test_task1_sentiment_proxy_when_no_direct_aspect():
+    """Case 2: Uses documented sentiment proxy when direct aspect is unavailable."""
+    df = pd.DataFrame([
+        {"Product_Name": "P2", "Category": "Tech", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""}
+    ])
+    res = aggregate_product_performance(df, min_reviews=1)
+    p2 = next(p for p in res["quality_profiles"] if p["product_name"] == "P2")
+    q_dim = p2["dimensions"]["Quality"]
+    assert q_dim["has_direct_evidence"] is False
+    # 100% pos -> sentiment_score = 100.0 -> proxy = 50 + (100 * 0.4) = 90.0
+    assert q_dim["score"] == 90.0
+    assert q_dim["positive_mentions"] == 0
+    assert q_dim["negative_mentions"] == 0
+
+
+def test_task1_score_clamping():
+    """Case 6: Scores are strictly clamped within [0, 100]."""
+    df = pd.DataFrame([
+        {"Product_Name": "P_High", "Category": "Tech", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""}
+    ])
+    res = aggregate_product_performance(df, min_reviews=1)
+    p = next(p for p in res["quality_profiles"] if p["product_name"] == "P_High")
+    for dim_name, d_info in p["dimensions"].items():
+        assert 0.0 <= d_info["score"] <= 100.0
+
+
+def test_task1_mixed_direct_and_estimated():
+    """Case 7: Mixture of directly supported and estimated dimensions."""
+    df = pd.DataFrame([
+        {"Product_Name": "P_Mix", "Category": "Tech", "Predicted_Sentiment": "Positive", "Detected_Issues": "Delivery", "Positive_Features": "Battery"}
+    ])
+    res = aggregate_product_performance(df, min_reviews=1)
+    p = next(p for p in res["quality_profiles"] if p["product_name"] == "P_Mix")
+    assert p["dimensions"]["Battery"]["has_direct_evidence"] is True
+    assert p["dimensions"]["Battery"]["score"] == 100.0
+    assert p["dimensions"]["Delivery"]["has_direct_evidence"] is True
+    assert p["dimensions"]["Delivery"]["score"] == 0.0
+    assert p["dimensions"]["Quality"]["has_direct_evidence"] is False
+    assert isinstance(p["dimensions"]["Quality"]["score"], float)
+
+
+# ============================================================================
+# Task 2 — Tie-Detection Shared Matrix
+# ============================================================================
+def test_task2_tie_detection_matrix():
+    """Tests single winner, exact tie, multiple ties, and empty dataset."""
+    # Single winner
+    df_single = pd.DataFrame([
+        {"Product_Name": "A", "Category": "C", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""},
+        {"Product_Name": "B", "Category": "C", "Predicted_Sentiment": "Negative", "Detected_Issues": "", "Positive_Features": ""}
+    ])
+    r_single = aggregate_product_performance(df_single, min_reviews=1)
+    assert len(r_single["kpis"]["best_products"]) == 1
+    assert r_single["kpis"]["best_products"][0]["name"] == "A"
+
+    # Exact tie
+    df_exact = pd.DataFrame([
+        {"Product_Name": "A", "Category": "C", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""},
+        {"Product_Name": "B", "Category": "C", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""},
+        {"Product_Name": "C", "Category": "C", "Predicted_Sentiment": "Neutral", "Detected_Issues": "", "Positive_Features": ""}
+    ])
+    r_exact = aggregate_product_performance(df_exact, min_reviews=1)
+    assert len(r_exact["kpis"]["best_products"]) == 2
+    assert {p["name"] for p in r_exact["kpis"]["best_products"]} == {"A", "B"}
+
+    # Multiple ties (10 products)
+    df_ten = pd.DataFrame([
+        {"Product_Name": f"Top_{i}", "Category": "C", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""}
+        for i in range(1, 11)
+    ])
+    r_ten = aggregate_product_performance(df_ten, min_reviews=1)
+    assert len(r_ten["kpis"]["best_products"]) == 10
+
+    # Empty DataFrame
+    r_empty = aggregate_product_performance(pd.DataFrame(), min_reviews=1)
+    assert r_empty["kpis"]["best_product"] is None
+    assert r_empty["kpis"]["best_products"] == []
+
+
+# ============================================================================
+# Task 4 — Candidate Coverage Beyond 30 Products
+# ============================================================================
+def test_task4_candidate_coverage_beyond_30():
+    """Quality profiles must include all distinct products without 30-item slice truncation."""
+    data = [
+        {"Product_Name": f"Product_{i:02d}", "Category": "Electronics", "Predicted_Sentiment": "Positive", "Detected_Issues": "", "Positive_Features": ""}
+        for i in range(1, 61)
+    ]
+    df = pd.DataFrame(data)
+    res = aggregate_product_performance(df, min_reviews=1)
+    assert res["kpis"]["products_analysed"] == 60
+    assert len(res["quality_profiles"]) == 60
+    assert any(p["product_name"] == "Product_60" for p in res["quality_profiles"])
+    assert any(p["product_name"] == "Product_35" for p in res["quality_profiles"])

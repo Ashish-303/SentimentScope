@@ -13,6 +13,7 @@ import pandas as pd
 # Default thresholds
 DEFAULT_MIN_REVIEWS: int = 5
 DEFAULT_RISK_THRESHOLD: float = 0.40  # 40% negative sentiment
+TIE_TOLERANCE: float = 0.0001  # Documented tolerance for sentiment score equality in tie detection (0.0001 points)
 
 # Radar quality dimensions mapping to taxonomy categories
 RADAR_DIMENSION_MAPPINGS = {
@@ -93,6 +94,7 @@ def aggregate_product_performance(
             "kpis": {
                 "products_analysed": 0,
                 "best_product": None,
+                "best_products": [],
                 "at_risk_count": 0,
                 "total_reviews": 0,
                 "risk_threshold_pct": round(risk_threshold * 100, 1),
@@ -157,6 +159,7 @@ def aggregate_product_performance(
             "kpis": {
                 "products_analysed": 0,
                 "best_product": None,
+                "best_products": [],
                 "at_risk_count": 0,
                 "total_reviews": 0,
                 "risk_threshold_pct": round(risk_threshold * 100, 1),
@@ -248,18 +251,36 @@ def aggregate_product_performance(
         key=lambda x: (x["sentiment_score"], -x["total_reviews"], x["product_name"])
     )
 
-    # Best-performing product
+    # Best-performing product and tied best-performing products
     best_product = None
+    best_products = []
     if sorted_desc:
-        top_item = sorted_desc[0]
-        best_product = {
-            "name": top_item["product_name"],
-            "score": top_item["sentiment_score"],
-            "reviews": top_item["total_reviews"],
-            "positive_pct": top_item["positive_pct"],
-            "negative_pct": top_item["negative_pct"],
-            "category": top_item["category"]
-        }
+        top_score = sorted_desc[0].get("sentiment_score")
+        if top_score is not None and not pd.isna(top_score):
+            best_products = [
+                {
+                    "name": p["product_name"],
+                    "score": p["sentiment_score"],
+                    "reviews": p["total_reviews"],
+                    "positive_pct": p["positive_pct"],
+                    "negative_pct": p["negative_pct"],
+                    "category": p["category"]
+                }
+                for p in sorted_desc
+                if p.get("sentiment_score") is not None
+                and not pd.isna(p["sentiment_score"])
+                and abs(p["sentiment_score"] - top_score) < TIE_TOLERANCE
+            ]
+            if best_products:
+                top_item = best_products[0]
+                best_product = {
+                    "name": top_item["name"],
+                    "score": top_item["score"],
+                    "reviews": top_item["reviews"],
+                    "positive_pct": top_item["positive_pct"],
+                    "negative_pct": top_item["negative_pct"],
+                    "category": top_item["category"]
+                }
 
     # At-risk count: distinct products with negative sentiment exceeding risk_threshold and reviews >= min_reviews
     at_risk_count = sum(1 for p in product_stats if p["is_at_risk"])
@@ -332,11 +353,20 @@ def aggregate_product_performance(
             "issues": prod["issues"]
         })
 
-    # Chart 5: Product Quality Profile (Radar Chart for up to 3 products)
-    # Default to top 3 products in ranking, or top 1 + bottom 1 + middle
-    # Generates radar scores (0-100) across 6 dimensions
+    # Chart 5: Product Quality Profile (Radar Chart)
+    # Includes all distinct products in dataset so users can select and compare any of them.
+    # Ranked products appear first, followed by unranked products (e.g. < min_reviews).
+    ranked_names = {p["product_name"] for p in sorted_desc}
+    non_ranked = [p for p in product_stats if p["product_name"] not in ranked_names]
+    non_ranked_sorted = sorted(
+        non_ranked,
+        key=lambda x: (x["total_reviews"], x["sentiment_score"], x["product_name"]),
+        reverse=True
+    )
+    all_quality_candidates = sorted_desc + non_ranked_sorted
+
     quality_profiles = []
-    for prod in sorted_desc[:10]:  # compute for top candidates so UI can compare any of them
+    for prod in all_quality_candidates:
         dimensions_scores = {}
         for dim, mappings in RADAR_DIMENSION_MAPPINGS.items():
             pos_cats = mappings["positive"]
@@ -347,17 +377,22 @@ def aggregate_product_performance(
             total_mentions = pos_mentions + neg_mentions
 
             if total_mentions > 0:
-                score = round((pos_mentions / total_mentions) * 100.0, 1)
-            else:
-                # Bayesian / Dirichlet baseline informed by product's general sentiment score
-                # Maps score from [-100, +100] to [10, 90] centered at 50
+                score = round(max(0.0, min(100.0, (pos_mentions / total_mentions) * 100.0)), 1)
+                has_direct = True
+            elif prod.get("total_reviews", 0) > 0 and prod.get("sentiment_score") is not None and not pd.isna(prod["sentiment_score"]):
+                # Sentiment-based proxy: maps score [-100, +100] to [10, 90] centered at 50, clamped [5.0, 95.0]
                 score = round(max(5.0, min(95.0, 50.0 + (prod["sentiment_score"] * 0.4))), 1)
+                has_direct = False
+            else:
+                # No direct aspect evidence and no defensible sentiment score (e.g. 0 reviews or null score)
+                score = None
+                has_direct = False
 
             dimensions_scores[dim] = {
                 "score": score,
                 "positive_mentions": pos_mentions,
                 "negative_mentions": neg_mentions,
-                "has_direct_evidence": bool(total_mentions > 0)
+                "has_direct_evidence": has_direct
             }
 
         quality_profiles.append({
@@ -372,6 +407,7 @@ def aggregate_product_performance(
         "kpis": {
             "products_analysed": unique_products_count,
             "best_product": best_product,
+            "best_products": best_products,
             "at_risk_count": at_risk_count,
             "total_reviews": total_filtered_reviews,
             "risk_threshold_pct": round(risk_threshold * 100, 1),

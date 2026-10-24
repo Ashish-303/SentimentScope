@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Filter, RotateCcw, Search, Database, X
@@ -43,6 +43,9 @@ export default function Performance() {
   const [rankingsModalOpen, setRankingsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('All Ranked Products');
 
+  // Track latest fetch request ID to prevent stale out-of-order asynchronous responses
+  const fetchIdRef = useRef(0);
+
   // Load available datasets on mount
   useEffect(() => {
     let isMounted = true;
@@ -81,6 +84,8 @@ export default function Performance() {
 
   // Fetch performance data when dataset or applied filters change
   const fetchData = useCallback(async () => {
+    const currentFetchId = ++fetchIdRef.current;
+
     // If we have uploadResult matching the selectedDataset and reviews are in memory,
     // we can compute immediately on client or fetch from server.
     if (uploadResult?.filename === selectedDataset && uploadResult?.review_data?.length) {
@@ -98,12 +103,16 @@ export default function Performance() {
         search: appliedSearch
       });
 
+      // Discard stale out-of-order responses if a newer fetch was initiated
+      if (currentFetchId !== fetchIdRef.current) return;
+
       if (res?.status === 'success' && res?.data) {
         setApiData(res.data);
       } else {
         throw new Error(res?.message || 'Failed to load performance metrics.');
       }
     } catch (err) {
+      if (currentFetchId !== fetchIdRef.current) return;
       console.error('Performance API error:', err);
       // If server is not responding, fallback to client-side data if available
       if (uploadResult?.review_data?.length) {
@@ -112,7 +121,9 @@ export default function Performance() {
         setError(err.response?.data?.message || err.message || 'Error connecting to analytics service.');
       }
     } finally {
-      setLoading(false);
+      if (currentFetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [selectedDataset, categoryFilter, sentimentFilter, appliedSearch, uploadResult]);
 

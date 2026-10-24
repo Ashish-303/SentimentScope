@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Package, Trophy, AlertTriangle, FileText, Info } from 'lucide-react';
 
 export default function PerformanceKPICards({ kpis }) {
@@ -7,14 +7,35 @@ export default function PerformanceKPICards({ kpis }) {
   const {
     products_analysed = 0,
     best_product = null,
+    best_products = [],
     at_risk_count = 0,
     total_reviews = 0,
     risk_threshold_pct = 40
   } = kpis;
 
-  const bestProductName = best_product?.name || '—';
-  const bestScore = best_product?.score != null ? `${best_product.score > 0 ? '+' : ''}${best_product.score}%` : '—';
-  const bestReviews = best_product?.reviews || 0;
+  const tiedProducts = useMemo(() => {
+    if (Array.isArray(best_products) && best_products.length > 0) {
+      return best_products;
+    }
+    if (best_product && best_product.name) {
+      return [best_product];
+    }
+    return [];
+  }, [best_products, best_product]);
+
+  const [selectedTiedIndex, setSelectedTiedIndex] = useState(0);
+
+  // Reset or adjust selection when tiedProducts changes (e.g., dataset changes)
+  useEffect(() => {
+    setSelectedTiedIndex(0);
+  }, [tiedProducts]);
+
+  const isTied = tiedProducts.length > 1;
+  const activeProduct = tiedProducts[selectedTiedIndex] || tiedProducts[0] || null;
+
+  const bestProductName = activeProduct?.name || '—';
+  const bestScore = activeProduct?.score != null ? `${activeProduct.score > 0 ? '+' : ''}${activeProduct.score}%` : '—';
+  const bestReviews = activeProduct?.reviews || 0;
 
   return (
     <div className="perf-kpi-grid">
@@ -38,12 +59,47 @@ export default function PerformanceKPICards({ kpis }) {
           <Trophy size={20} strokeWidth={2.2} />
         </div>
         <div className="perf-kpi-body">
-          <span className="perf-kpi-label">Best performing product</span>
-          <div className="perf-kpi-val-row">
-            <span className="perf-kpi-val perf-kpi-val-text" title={bestProductName}>
-              {bestProductName}
-            </span>
+          <div className="perf-kpi-header-row">
+            <span className="perf-kpi-label">Best performing product</span>
+            {isTied && (
+              <span
+                className="perf-tie-pill"
+                title={`${tiedProducts.length} products tied with top score of ${bestScore}`}
+              >
+                {tiedProducts.length} tied
+              </span>
+            )}
           </div>
+
+          {isTied ? (
+            <div className="perf-kpi-val-row perf-kpi-select-row">
+              <select
+                className="perf-kpi-dropdown"
+                value={selectedTiedIndex}
+                onChange={(e) => setSelectedTiedIndex(Number(e.target.value))}
+                title={bestProductName}
+                aria-label="Select tied best performing product"
+              >
+                {tiedProducts.map((p, idx) => (
+                  <option key={`${p.name}-${idx}`} value={idx} title={p.name}>
+                    {p.name} ({p.score > 0 ? '+' : ''}{p.score}% · {p.reviews} rev)
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="perf-kpi-val-row">
+              <span
+                className="perf-kpi-val perf-kpi-val-text"
+                title={bestProductName}
+                tabIndex={0}
+                aria-label={`Best performing product: ${bestProductName}`}
+              >
+                {bestProductName}
+              </span>
+            </div>
+          )}
+
           <div className="perf-kpi-sub-score">
             <span className="perf-score-badge">{bestScore}</span>
             <span className="perf-kpi-sub" title={`${bestReviews} reviews considered`}>

@@ -7,6 +7,7 @@
 
 export const DEFAULT_MIN_REVIEWS = 5;
 export const DEFAULT_RISK_THRESHOLD = 0.40; // 40% negative sentiment
+export const TIE_TOLERANCE = 0.0001; // Documented tolerance for sentiment score equality in tie detection (0.0001 points)
 
 export const RADAR_DIMENSION_MAPPINGS = {
   Quality: {
@@ -76,6 +77,7 @@ export function aggregatePerformanceData(reviews = [], options = {}) {
       kpis: {
         products_analysed: 0,
         best_product: null,
+        best_products: [],
         at_risk_count: 0,
         total_reviews: 0,
         risk_threshold_pct: Math.round(riskThreshold * 100),
@@ -120,6 +122,7 @@ export function aggregatePerformanceData(reviews = [], options = {}) {
       kpis: {
         products_analysed: 0,
         best_product: null,
+        best_products: [],
         at_risk_count: 0,
         total_reviews: 0,
         risk_threshold_pct: Math.round(riskThreshold * 100),
@@ -235,14 +238,23 @@ export function aggregatePerformanceData(reviews = [], options = {}) {
     return a.product_name.localeCompare(b.product_name);
   });
 
-  const bestProduct = sortedDesc.length ? {
-    name: sortedDesc[0].product_name,
-    score: sortedDesc[0].sentiment_score,
-    reviews: sortedDesc[0].total_reviews,
-    positive_pct: sortedDesc[0].positive_pct,
-    negative_pct: sortedDesc[0].negative_pct,
-    category: sortedDesc[0].category
-  } : null;
+  const topScore = sortedDesc.length && typeof sortedDesc[0].sentiment_score === 'number' && !isNaN(sortedDesc[0].sentiment_score)
+    ? sortedDesc[0].sentiment_score
+    : null;
+  const bestProducts = topScore !== null
+    ? sortedDesc
+        .filter(p => typeof p.sentiment_score === 'number' && !isNaN(p.sentiment_score) && Math.abs(p.sentiment_score - topScore) < TIE_TOLERANCE)
+        .map(p => ({
+          name: p.product_name,
+          score: p.sentiment_score,
+          reviews: p.total_reviews,
+          positive_pct: p.positive_pct,
+          negative_pct: p.negative_pct,
+          category: p.category
+        }))
+    : [];
+
+  const bestProduct = bestProducts.length ? bestProducts[0] : null;
 
   const atRiskCount = productStats.filter(p => p.is_at_risk).length;
 
@@ -280,26 +292,44 @@ export function aggregatePerformanceData(reviews = [], options = {}) {
   }));
 
   // Chart 5: Radar Quality Profile candidate products
-  const qualityProfiles = sortedDesc.slice(0, 15).map(prod => {
+  // Includes all distinct products in dataset so users can select and compare any of them.
+  // Ranked products appear first, followed by unranked products (e.g. < minReviews).
+  const rankedNames = new Set(sortedDesc.map(p => p.product_name));
+  const unranked = productStats
+    .filter(p => !rankedNames.has(p.product_name))
+    .sort((a, b) => {
+      if (b.total_reviews !== a.total_reviews) return b.total_reviews - a.total_reviews;
+      if (b.sentiment_score !== a.sentiment_score) return b.sentiment_score - a.sentiment_score;
+      return a.product_name.localeCompare(b.product_name);
+    });
+  const allQualityCandidates = [...sortedDesc, ...unranked];
+
+  const qualityProfiles = allQualityCandidates.map(prod => {
     const dimensions = {};
     Object.entries(RADAR_DIMENSION_MAPPINGS).forEach(([dim, mappings]) => {
       const posMentions = mappings.positive.reduce((acc, cat) => acc + (prod.positive_features[cat] || 0), 0);
       const negMentions = mappings.complaint.reduce((acc, cat) => acc + (prod.issues[cat] || 0), 0);
       const totalMentions = posMentions + negMentions;
 
-      let score;
+      let score = null;
+      let hasDirect = false;
       if (totalMentions > 0) {
-        score = Number(((posMentions / totalMentions) * 100).toFixed(1));
-      } else {
-        // Base Bayesian score aligned with product's overall sentiment
+        score = Number(Math.max(0, Math.min(100, (posMentions / totalMentions) * 100)).toFixed(1));
+        hasDirect = true;
+      } else if (prod.total_reviews > 0 && typeof prod.sentiment_score === 'number' && !isNaN(prod.sentiment_score)) {
+        // Sentiment-based proxy: maps score [-100, +100] to [10, 90] centered at 50, clamped [5.0, 95.0]
         score = Number(Math.max(5, Math.min(95, 50 + (prod.sentiment_score * 0.4))).toFixed(1));
+        hasDirect = false;
+      } else {
+        score = null;
+        hasDirect = false;
       }
 
       dimensions[dim] = {
         score,
         positive_mentions: posMentions,
         negative_mentions: negMentions,
-        has_direct_evidence: totalMentions > 0
+        has_direct_evidence: hasDirect
       };
     });
 
@@ -316,6 +346,7 @@ export function aggregatePerformanceData(reviews = [], options = {}) {
     kpis: {
       products_analysed: Object.keys(productGroups).length,
       best_product: bestProduct,
+      best_products: bestProducts,
       at_risk_count: atRiskCount,
       total_reviews: totalReviews,
       risk_threshold_pct: Math.round(riskThreshold * 100),
